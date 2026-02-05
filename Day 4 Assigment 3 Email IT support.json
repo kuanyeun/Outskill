@@ -1,0 +1,262 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        -256
+      ],
+      "id": "9df814ad-65e8-428a-af4b-9c1c44bd37c6",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UGZdGmQDYMRyvfYa",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.snippet }}\n{{ $json.Subject }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "IMPORTANT_customer_email",
+              "description": "Any email where customer or user is requiring support"
+            },
+            {
+              "category": "NewsLetters",
+              "description": "Any email there is news artical or product updates."
+            },
+            {
+              "category": "Feedback",
+              "description": "if customers give us feedback or complaints "
+            }
+          ]
+        },
+        "options": {
+          "multiClass": true,
+          "enableAutoFixing": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        -256
+      ],
+      "id": "626dd8b1-b726-44b2-ad40-9a9640a11d84",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        -48
+      ],
+      "id": "8a257d13-33ff-4dee-a216-f8cde4440b97",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "IHWgjjAA1XqJDTQA",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        -144
+      ],
+      "id": "26ecdd61-f1a4-4fd4-8852-3e0c23654d52",
+      "name": "Delete a message",
+      "webhookId": "84df56ed-6a98-4173-8a5d-b81f965361f2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UGZdGmQDYMRyvfYa",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User email -{{ $('Gmail Trigger').item.json.snippet }}\nUser subject -{{ $('Gmail Trigger').item.json.Subject }}",
+        "options": {
+          "systemMessage": "Act as email expert and send reply to customer emails.\nBe polite and resolve customers query  based on our product and services.\n\nOur company name is HCL Tech support where you as IT support that respond to customer query \n\nif you are not sure reply refer to real human to assist you.\n\nEnd of massage."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        -368
+      ],
+      "id": "5bc5e412-008e-480b-bc35-6cceb48a4e95",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        -96
+      ],
+      "id": "3b1c98d8-1510-4914-9fc0-66b8948562fb",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "IHWgjjAA1XqJDTQA",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        -368
+      ],
+      "id": "dfe89b1a-fbfd-4918-bd3b-9d206204a11a",
+      "name": "Reply to a message",
+      "webhookId": "01a424c5-1c6e-4b0c-a5ad-a91b0c0b78b6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UGZdGmQDYMRyvfYa",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "11e769e4-b930-4ed9-b8c5-64ae64e42730",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "afe9b5ba7e307364b145392d128f73560cb7d29f2bc3977b19f62934bc060895"
+  },
+  "id": "g49bToCf180kEbQ1NmRIq",
+  "tags": []
+}
